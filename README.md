@@ -17,4 +17,6 @@ There's an option to 'Avoid phone going to sleep' which needs to be activated be
 ## Screenshots
 ![image](CustomPZ-Screenshot.png)
 
+![image](Hanuka-Xmas-Chart2.png)
+
 ![image](Hanuka-Xmas-Chart.png)
