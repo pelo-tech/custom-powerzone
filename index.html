@@ -96,14 +96,27 @@ angular.module('pelotonApp', [])
   }
   pelotonController.reset=function(){
     pelotonController.now=0;
+    pelotonController.intervalIndex=0;
   }
     pelotonController.forward=function(n){
-    pelotonController.now+=n
-    ;
+    pelotonController.now+=n;
+    pelotonController.resetIndex();
   }
   pelotonController.backward=function(n){
     pelotonController.now-=n;
-  }
+    pelotonController.resetIndex();
+  };
+  
+  pelotonController.resetIndex=function(){
+      for(var i=0;i<pelotonController.intervals.length;++i){
+        var interval=pelotonController.intervals[i];
+        if(pelotonController.now>=interval.start && pelotonController.now<interval.end) {
+          pelotonController.intervalIndex=i;
+          return;
+        }
+      }
+  };
+  
   setInterval(function(){
     if(pelotonController.started){
       pelotonController.now++;
@@ -296,7 +309,8 @@ angular.module('pelotonApp', [])
           </li>
      
     </ul>
-    
+
+ <d  
 </body>
 </html> 
 
