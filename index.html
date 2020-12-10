@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html ng-app="pelotonApp">
+  <head>
+  <style>
+
+  </style>
+    <base target="_top">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/nosleep/0.11.0/NoSleep.min.js"></script>
+    <script src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.0/angular.min.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+<link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+<style>
+  .zone1{
+     background-color:#EAEAEA;
+     color: #000;
+  }
+    .zone2{
+     background-color:#82BA6A;
+      color: #000;
+  }
+    .zone3{
+     background-color:#FEE087;
+      color: #000;
+  }
+    .zone4{
+     background-color:#F8B00B;
+  }
+   .zone5{
+     background-color:#FD8668;
+  }
+   .zone6{
+     background-color:#F15236;
+  }
+   .zone7{
+     background-color:#E00006;
+  }
+  .soon{
+    background-color:#F3B4A5;
+  }
+  
+    </style>
+<script>
+  String.prototype.toMS=function(){
+    var sec=parseInt(this,10);
+    var min=0;
+    if(sec>60){
+      min=Math.floor(sec/60);
+      sec%=60;
+    }
+    return ((min>0)?min+"m":"")+sec+"s";
+  }
+  
+  
+  String.prototype.toMMSS = function (leadingzero) {
+    var sec_num = parseInt(this, 10); // don't forget the second param
+    var minutes = Math.floor((sec_num ) / 60);
+    var seconds = sec_num -  (minutes * 60);
+
+    if (minutes < 10 && leadingzero) {minutes = "0"+minutes;}
+    if (seconds < 10) {seconds = "0"+seconds;}
+    return minutes+':'+seconds;
+}
+  
+angular.module('pelotonApp', [])
+  .controller('PelotonUserController', function($scope) {
+    var pelotonController = this;
+  pelotonController.started=false;
+  pelotonController.now=0;
+  pelotonController.noSleep=null;
+  pelotonController.keepAwake=false;
+  pelotonController.intervalIndex=0;
+  
+   pelotonController.toggleStart=function(){
+    pelotonController.started=!pelotonController.started;
+    if(pelotonController.started && pelotonController.keepAwake) {
+      console.log("Enabling NoSleep");
+      pelotonController.noSleep=new NoSleep();
+      pelotonController.noSleep.enable();
+    }
+    else if(pelotonController.noSleep){
+      console.log("Destroying noSleep");
+      pelotonController.noSleep.disable();
+      pelotonController.noSleep=null;
+    }
+  }
+  
+  pelotonController.stop=function(){
+    pelotonController.started=false;
+    if(pelotonController.noSleep){
+      console.log("Destroying noSleep");
+      pelotonController.noSleep.disable();
+      pelotonController.noSleep=null;
+    }
+  }
+  pelotonController.reset=function(){
+    pelotonController.now=0;
+  }
+    pelotonController.forward=function(n){
+    pelotonController.now+=n
+    ;
+  }
+  pelotonController.backward=function(n){
+    pelotonController.now-=n;
+  }
+  setInterval(function(){
+    if(pelotonController.started){
+      pelotonController.now++;
+      var intervals=pelotonController.intervals;
+      if(pelotonController.intervalIndex < intervals.length -1){
+        if(pelotonController.now >= intervals[pelotonController.intervalIndex].end){
+          ++pelotonController.intervalIndex;
+        }
+      }
+      if(!pelotonController.keepAwake &&pelotonController.noSleep){
+        console.log("Destroying noSleep");
+        pelotonController.noSleep.disable();
+        pelotonController.noSleep=null;
+      } 
+      if(pelotonController.now>=pelotonController.sections[pelotonController.sections.length-1].end){
+        console.log("Stopped "+pelotonController.now +" seconds elapsed");
+        pelotonController.stop();
+      }
+      $scope.$digest();
+      
+    }
+  },1000);
+  pelotonController.sections=[
+   { name: 'Flat Road', start: 0, end: 119, intervals:[
+     {start: 0, end: 119, zone:1}
+   ]},
+   { name: 'Spin-ups', start: 120, end: 284, intervals:[
+     {start: 120, end: 149, zone:2},
+     {start: 150, end: 164, zone:1},
+     {start: 165, end: 194, zone:3},
+     {start: 195, end: 209, zone:1},
+     {start: 210, end: 239, zone:3},
+     {start: 240, end: 254, zone:1},
+     {start: 255, end: 284, zone:4}
+   ]},
+   { name: 'Build', start: 285, end: 689, intervals:[
+     {start: 285, end: 389, zone:1},
+     {start: 390, end: 449, zone:2},
+     {start: 450, end: 509, zone:3},
+     {start: 510, end: 569, zone:4},
+     {start: 570, end: 599, zone:5},
+     {start: 600, end: 689, zone:1}
+   ]},
+   { name: 'Christmas', start: 690, end: 1049, intervals:[
+     {start: 690, end: 719, zone:2},
+     {start: 720, end: 749, zone:3},
+     {start: 750, end: 779, zone:4},
+     {start: 780, end: 809, zone:5},
+     {start: 810, end: 839, zone:6},
+     {start: 840, end: 869, zone:5},
+     {start: 870, end: 899, zone:4},
+     {start: 900, end: 929, zone:3},
+     {start: 930, end: 959, zone:2},
+     {start: 960, end: 1049, zone:1}
+   ]},
+   { name: 'Hannukah', start: 1050, end: 1679, intervals:[
+     {start: 1050, end: 1079, zone:3},
+     {start: 1080, end: 1124, zone:1},
+     {start: 1125, end: 1154, zone:3},
+     {start: 1155, end: 1199, zone:1},
+     {start: 1200, end: 1229, zone:3},
+     {start: 1230, end: 1274, zone:1},
+     {start: 1275, end: 1304, zone:3},
+     {start: 1305, end: 1349, zone:1},
+     {start: 1350, end: 1379, zone:6},
+     {start: 1380, end: 1424, zone:1},
+     {start: 1425, end: 1454, zone:3},
+     {start: 1455, end: 1499, zone:1},
+     {start: 1500, end: 1529, zone:3},
+     {start: 1530, end: 1574, zone:1},
+     {start: 1575, end: 1604, zone:3},
+     {start: 1605, end: 1649, zone:1},
+     {start: 1650, end: 1679, zone:3}
+   ]},
+    { name: 'Flat Road', start: 1680, end: 1799, intervals:[
+       {start: 1680, end: 1799, zone:1}
+     ]}
+    
+  ];
+     
+    var intervals=[];
+    // just some reformatting until I decide on the data model
+    pelotonController.sections.forEach(
+      section => {
+       section.intervals.forEach(interval=>{
+           intervals.push({
+            start: interval.start,
+            end:interval.end,
+            zone:interval.zone,
+            name:section.name
+          });
+       });
+     });
+    pelotonController.intervals=intervals.sort((a,b)=>{return a.start-b.start;});
+    pelotonController.max=pelotonController.intervals[pelotonController.intervals.length-1].end;
+    
+  });
+</script>
+</head>
+  <body style='padding: 10px 10px 10px 10px' ng-controller="PelotonUserController as peloton"  >
+<div class="sticky-top bg-white">
+     <h3><i class="fa fa-bicycle"></i> DIY Power Zone Ride</h3>
+      <button  ng-click="peloton.toggleStart()" 
+              class="badge badge-pill badge-secondary">
+        <span ng-if="peloton.started"><i class="fa fa-pause"></i> Pause</span>
+        <span ng-if="!peloton.started"><i class="fa fa-play"></i>  Start</span></button>
+       <button  ng-click="peloton.reset()" 
+              class="badge badge-pill badge-secondary"><i class="fa fa-refresh"></i>  Reset Timer</span></button>
+    <button  ng-click="peloton.backward(15)" 
+              class="badge badge-pill badge-secondary"><i class="fa fa-backward"></i>  -15s</span></button>
+  <button  ng-click="peloton.forward(15)" 
+              class="badge badge-pill badge-secondary"><i class="fa fa-forward"></i>  +15s</span></button>
+  <button  ng-click="peloton.forward(60)" 
+              class="badge badge-pill badge-secondary"><i class="fa fa-forward"></i>  +1min</span></button>
+  <br><small class="text-muted" ><input type="checkbox": ng-model="keepAwake"> Keep Awake (Will cause Phone Audio to mute)</small>
+    <h1 style="font-size:80px" class="text-danger">{{(""+peloton.now).toMMSS(true)}}</h1>
+<div class="progress">
+  <div class="progress-bar" role="progressbar" style="width: {{100*peloton.now/peloton.max}}% "></div>
+</div>
+<br>
+<div class="card-group"  >
+  <div class="card" style="background-color:#ccc" ng-if="peloton.intervalIndex>0">
+    <div class="card-body">
+      <h5 class="card-title">{{peloton.intervals[peloton.intervalIndex-1].name}}</h5>
+      <h3 class="card-text">Zone {{peloton.intervals[peloton.intervalIndex-1].zone}}</h3>
+      <p class="card-text"><small class="text-muted">
+        {{(""+peloton.intervals[peloton.intervalIndex-1].start).toMMSS()}} -
+        {{(""+peloton.intervals[peloton.intervalIndex-1].end).toMMSS()}}
+       </small></p>
+    </div>
+  </div>
+  <div class="card" style="background-color:#ffa" ng-if="peloton.intervalIndex < peloton.intervals.length">
+    <div class="card-body">
+      <h5 class="card-title">{{peloton.intervals[peloton.intervalIndex].name}}</h5>
+      <h1 class="text-danger card-text">Zone {{peloton.intervals[peloton.intervalIndex].zone}}</h1>
+      <h3 class="card-text" >
+         {{  (""+( peloton.intervals[peloton.intervalIndex].end-peloton.now)).toMMSS()}}
+      </h3>
+      <div class="progress">
+      <div class="progress-bar" role="progressbar" style=" width: {{ 100- 100*(peloton.now-peloton.intervals[peloton.intervalIndex].start)/(peloton.intervals[peloton.intervalIndex].end-peloton.intervals[peloton.intervalIndex].start)}}% "></div>
+    </div>
+    </div>
+  </div>
+  <div class="card" ng-class="{soon:(peloton.intervals[peloton.intervalIndex+1].start-peloton.now < 10)}" ng-if="peloton.intervalIndex<(peloton.intervals.length-1)">
+    <div class="card-body">
+      <h5 class="card-title">{{peloton.intervals[peloton.intervalIndex+1].name}}</h5>
+      <h3>Zone {{peloton.intervals[peloton.intervalIndex+1].zone}}</h3>
+      <p class="card-text"><small class="text-muted">
+        {{(""+peloton.intervals[peloton.intervalIndex+1].start).toMMSS()}} -
+        {{(""+peloton.intervals[peloton.intervalIndex+1].end).toMMSS()}}
+       </small></p>
+    </div>
+  </div>
+  <div class="card" ng-if="peloton.intervalIndex<(peloton.intervals.length-2)">
+    <div class="card-body">
+      <h5 class="card-title">{{peloton.intervals[peloton.intervalIndex+2].name}}</h5>
+      <h3>Zone {{peloton.intervals[peloton.intervalIndex+2].zone}}</h3>
+      <p class="card-text"><small class="text-muted">
+        {{(""+peloton.intervals[peloton.intervalIndex+2].start).toMMSS()}} -
+        {{(""+peloton.intervals[peloton.intervalIndex+2].end).toMMSS()}}
+      </small></p>
+    </div>
+  </div>
+</div>
+
+ 
+</div>
+<br><br>
+ 
+<h2>Sections</h2>
+      <div ng-repeat="section in peloton.sections">
+        <h5> {{section.name}} </h5>
+        <small><i class="fa fa-clock-o" ></i>
+ {{(""+section.start).toMMSS()}} - {{(""+section.end).toMMSS()}}</small>
+        <ul>
+            <li  ng-class="{'bg-success':(peloton.now>=i.start&&peloton.now<=i.end)}" ng-repeat="i in section.intervals">
+              <div style="padding: 2px 2px 2px 2px">{{(""+i.start).toMMSS() }}  <span class="zone{{i.zone}} badge badge-pill badge-danger">Zone {{i.zone}}</span>-  {{(""+(i.end-i.start +1)).toMS()}} </div>
+          </li>
+       </ul>
+       
+    </div>
+
+<hr>
+<h2>Intervals(Merged)</h2>
+
+     <ul class="list-unstyled">
+          <li  ng-repeat="i in peloton.intervals" >
+            <div  style="padding: 2px 2px 2px 2px" ng-class="{'bg-success':($index==peloton.intervalIndex)}">
+              <i ng-show="$index==peloton.intervalIndex" class="text-danger fa fa-bicycle"></i> {{i.name}}: {{(""+i.start).toMMSS() }}  <span class="zone{{i.zone}} badge badge-pill badge-danger">Zone {{i.zone}}</span>-  {{(""+(i.end-i.start +1)).toMS()}} </div> 
+          </li>
+     
+    </ul>
+    
+</body>
+</html> 
+
